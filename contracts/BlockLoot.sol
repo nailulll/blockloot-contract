@@ -33,7 +33,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         return super.supportsInterface(interfaceId);
     }
 
-    // mint NFT
+    // mint NFT to user address
     function mintNFT(string memory _tokenURI) public returns (uint256) {
         _tokenId++;
         uint256 newItemId = _tokenId;
@@ -44,6 +44,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         return newItemId;
     }
 
+    // listing nft to marketplace
     function listNFT(uint256 tokenId, uint256 price) public {
         require(
             ownerOf(tokenId) == msg.sender,
@@ -82,7 +83,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         feePercent = newFee;
     }
 
-    // delete listing NFT (opsional)
+    // delete listing NFT (opsional) from marketplace
     function cancelListing(uint256 tokenId) public {
         require(
             listings[tokenId].seller == msg.sender,
