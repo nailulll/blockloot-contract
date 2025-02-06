@@ -33,7 +33,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         return super.supportsInterface(interfaceId);
     }
 
-    // mint NFT to user address
+    // mint NFT to wallet user address
     function mintNFT(string memory _tokenURI) public returns (uint256) {
         _tokenId++;
         uint256 newItemId = _tokenId;
@@ -79,7 +79,8 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
 
     // update fee marketplace (only owner)
     function updateFeePercent(uint256 newFee) public onlyOwner {
-        require(newFee <= 10, "Fee too high, max 10%"); //Batasi max fee 10%
+        require(newFee <= 10, "Fee too high, max 10%"); // max fee 10%
+        require(newFee > 0, "Fee must be greater than zero"); // fee must be greater than zero
         feePercent = newFee;
     }
 

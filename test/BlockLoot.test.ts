@@ -3,6 +3,10 @@ import { ethers } from "hardhat";
 import { BlockLoot } from "../typechain-types";
 import { Signer } from "ethers";
 
+function formatEther(value: BigInt) {
+  return ethers.formatEther(value.toString()) + " ETH";
+}
+
 describe("BlockLoot", function () {
   let token: BlockLoot;
   let ownerAddress: Signer;
@@ -46,6 +50,12 @@ describe("BlockLoot", function () {
         "Fee too high, max 10%"
       );
     });
+    it("should failed update fee when fee less than 0", async () => {
+      await expect(token.updateFeePercent(0)).to.be.revertedWith(
+        "Fee must be greater than zero"
+      );
+    });
+    
     it("should owner can change fee", async () => {
       const contractSigner = token.connect(address1);
       await expect(
@@ -135,6 +145,85 @@ describe("BlockLoot", function () {
       await expect(
         token.connect(address1).cancelListing(999)
       ).to.be.revertedWith("You are not the seller");
+    });
+  });
+
+  describe("buy nft", () => {
+    beforeEach(async () => {
+      // mint nft first before running test
+      await token.mintNFT("ipfs://QmXYZ123...");
+      await token.listNFT(1, ethers.parseEther("2"));
+    });
+
+    it("should revert if nft not listed", async () => {
+      await expect(token.connect(address1).buyNft(2)).to.be.revertedWith(
+        "NFT not listed"
+      );
+    });
+
+    it("should revert if incorrect price", async () => {
+      await expect(
+        token.connect(address1).buyNft(1, { value: ethers.parseEther("1") })
+      ).to.be.revertedWith("Incorrect price");
+    });
+
+    it("should transfer NFT ownership to buyer", async () => {
+      const contractSigner = token.connect(address1);
+      await contractSigner.buyNft(1, { value: ethers.parseEther("2") });
+      expect(await token.ownerOf(1)).to.equal(await address1.getAddress());
+    });
+
+    it("should transfer payment to seller and fee to marketplace", async () => {
+      const price = ethers.parseEther("3"); // 3 ETH
+      const feePercent = 5n; // 5% in format BigInt
+      const feeAmount = (price * feePercent) / 100n; // Fee calculated manually
+      const sellerAmount = price - feeAmount; // the remainder received by seller
+
+      const ownerBalanceBefore = await ethers.provider.getBalance(ownerAddress);
+      const sellerBalanceBefore = await ethers.provider.getBalance(address1);
+      const buyerBalanceBefore = await ethers.provider.getBalance(address2);
+
+      await token.connect(address1).mintNFT("ipfs://QmXYZ123...");
+      await token.connect(address1).listNFT(2, price);
+
+      const tx = await token.connect(address2).buyNft(2, { value: price });
+      const receipt = await tx.wait();
+      const gasUsed = receipt!.gasUsed * receipt!.gasPrice; // count gas fee buyer
+
+      const ownerBalanceAfter = await ethers.provider.getBalance(ownerAddress);
+      const sellerBalanceAfter = await ethers.provider.getBalance(address1);
+      const buyerBalanceAfter = await ethers.provider.getBalance(address2);
+
+      console.log(
+        "Owner received:",
+        formatEther(ownerBalanceAfter - ownerBalanceBefore)
+      );
+      console.log(
+        "Seller received:",
+        formatEther(sellerBalanceAfter - sellerBalanceBefore)
+      );
+      console.log(
+        "Buyer spent (with gas):",
+        formatEther(buyerBalanceBefore - buyerBalanceAfter)
+      );
+      
+      expect(ownerBalanceAfter - ownerBalanceBefore).to.equal(feeAmount);
+      expect(sellerBalanceAfter - sellerBalanceBefore).to.be.closeTo(
+        sellerAmount,
+        ethers.parseEther("0.001")
+      );
+      expect(buyerBalanceBefore - buyerBalanceAfter).to.be.closeTo(
+        price + gasUsed,
+        ethers.parseEther("0.01")
+      );
+    });
+
+
+    it("should remove from listings after purchase", async () => {
+      const contractSigner = token.connect(address1);
+      await contractSigner.buyNft(1, { value: ethers.parseEther("2") });
+      const listing = await token.listings(1);
+      expect(listing[0]).to.equal(ethers.ZeroAddress);
     });
   });
 });
