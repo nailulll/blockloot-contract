@@ -55,7 +55,7 @@ describe("BlockLoot", function () {
         "Fee must be greater than zero"
       );
     });
-    
+
     it("should owner can change fee", async () => {
       const contractSigner = token.connect(address1);
       await expect(
@@ -206,7 +206,7 @@ describe("BlockLoot", function () {
         "Buyer spent (with gas):",
         formatEther(buyerBalanceBefore - buyerBalanceAfter)
       );
-      
+
       expect(ownerBalanceAfter - ownerBalanceBefore).to.equal(feeAmount);
       expect(sellerBalanceAfter - sellerBalanceBefore).to.be.closeTo(
         sellerAmount,
@@ -217,7 +217,6 @@ describe("BlockLoot", function () {
         ethers.parseEther("0.01")
       );
     });
-
 
     it("should remove from listings after purchase", async () => {
       const contractSigner = token.connect(address1);
