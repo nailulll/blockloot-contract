@@ -17,6 +17,8 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
 
     mapping(uint256 => Listing) public listings; // Mapping token ID
 
+    event Minted(address indexed owner, uint256 tokenId);
+
     constructor(
         address initialOwner
     ) ERC721("BlockLoot", "BLT") Ownable(initialOwner) {}
@@ -40,6 +42,8 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
 
         _mint(msg.sender, newItemId); // mint NFT to caller
         _setTokenURI(newItemId, _tokenURI); // set metadata URI
+
+        emit Minted(msg.sender, newItemId);
 
         return newItemId;
     }
