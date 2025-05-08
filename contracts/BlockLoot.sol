@@ -64,6 +64,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         Listing memory item = listings[tokenId];
 
         require(item.seller != address(0), "NFT not listed");
+        require(ownerOf(tokenId) == item.seller, "Seller no longer owns this NFT");
         require(msg.value == item.price, "Incorrect price");
 
         // calculate fee marketplace
@@ -74,7 +75,7 @@ contract BlockLoot is ERC721, ERC721URIStorage, Ownable {
         payable(item.seller).transfer(sellerAmount);
         payable(owner()).transfer(fee);
 
-        // transfer nft to buyyer
+        // transfer nft to buyer
         _transfer(item.seller, msg.sender, tokenId);
 
         // remove listing

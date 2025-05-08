@@ -224,5 +224,15 @@ describe("BlockLoot", function () {
       const listing = await token.listings(1);
       expect(listing[0]).to.equal(ethers.ZeroAddress);
     });
+
+    it("should revert if seller no longer owns the NFT", async function () {
+      await token.mintNFT("ipfs://QmXYZ123...");
+      await token.listNFT(1, ethers.parseEther("1"));
+      await token.transferFrom(await ownerAddress.getAddress(), await address2.getAddress(), 1);
+      await expect(
+          token.connect(address1).buyNft(1, { value: ethers.parseEther("1") })
+      ).to.be.revertedWith("Seller no longer owns this NFT");
+    });
+
   });
 });
